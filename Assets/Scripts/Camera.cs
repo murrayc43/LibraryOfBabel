@@ -56,9 +56,9 @@ public class Camera : MonoBehaviour
      ****************************************************************************************************/
     private void CursorState()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.KeypadMinus))
             Cursor.lockState = cursorLock = CursorLockMode.None;
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKeyDown(KeyCode.KeypadPlus))
             Cursor.lockState = cursorLock = CursorLockMode.Locked;
 
         Cursor.lockState = cursorLock;

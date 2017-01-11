@@ -10,13 +10,15 @@ public class Algorithm : MonoBehaviour
     #region Variables
     public Text bookText;
     private string characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/? "; //95 unique characters
-    private const int PAGE_WIDTH = 102;
-    private const int PAGE_HEIGHT = 25;
-    private const int PAGE_LENGTH = 1960;//50;
-    private const int BOOK_LENGTH = PAGE_LENGTH;// * 1000;
+    private const int PAGE_WIDTH = 137;
+    private const int PAGE_HEIGHT = 28;
+    private const int PAGE_LENGTH = PAGE_WIDTH * PAGE_HEIGHT;
+    private const int AMOUNT_OF_PAGES = 10;
+    private const int BOOK_LENGTH = PAGE_LENGTH * AMOUNT_OF_PAGES;
     private const int MOD = 95;
     private const int SEED = 42;
     private float currentTime, previousTime = 0f;
+    private int currentPage = 0;
     #endregion
 
     #region Start
@@ -26,8 +28,6 @@ public class Algorithm : MonoBehaviour
     public void Start()
     {
         bookText = GameObject.FindGameObjectWithTag("BookText").GetComponent<Text>();
-        Encrypt("I love you mom and dad!");
-        Decrypt("17kzS|gU?D0O9}NBe. ;436BN@hG5D+U8XSjp ( } :]txF6n pTL'<G i{N;~e2<UV`JXR=8iS_p-g-F & -WCvmouBQ* rZ3I NR-!Nx/_549=tHV_g}ayl@o!");
     }
     #endregion
 
@@ -37,8 +37,12 @@ public class Algorithm : MonoBehaviour
     /// </summary>
     public void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F))
-            Encrypt(Random.Range(0, 1204).ToString());
+        //TESTING PURPOSES ONLY.
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            GUIUtility.systemCopyBuffer = bookText.text;
+            Debug.Log("<color=green>Page text copied to clipboard!</color>");
+        }
     }
     #endregion
 
@@ -47,15 +51,22 @@ public class Algorithm : MonoBehaviour
     /// Pads a string with leading spaces.
     /// </summary>
     /// <param name="str">A string you would like to pad with extra spaces.</param>
+    /// <param name="padBasedOnCurrentPage">Should the string be padded on both sides of the string based on the current page?</param>
     /// <returns>The string padded with leading spaces.</returns>
     public string Pad(string str)
     {
-        string newStr = "";
-        for (int i = 0; i < BOOK_LENGTH - str.Length; i++)
-            newStr += " ";
-        return (newStr + str);
+        return (new string(' ', BOOK_LENGTH - str.Length) + str);
     }
     #endregion
+
+    public string PadDecrypt(string str)
+    {
+        string paddedStr = "";
+        paddedStr += new string(' ', (currentPage - 1) * PAGE_LENGTH);
+        paddedStr += str;
+        paddedStr += new string(' ', BOOK_LENGTH - str.Length);
+        return paddedStr;
+    }
 
     #region Strip
     /// <summary>
@@ -69,12 +80,26 @@ public class Algorithm : MonoBehaviour
         bool copy = false;
         for (int i = 0; i < str.Length; i++)
         {
-            if (!copy && str[i] != ' ')
+            if (!copy && str[i] != ' ' && str[i] != '\n')
                 copy = true;
             if (copy)
                 newStr += str[i];
         }
         return newStr;
+    }
+    #endregion
+
+    #region FixStringForUI
+    /// <summary>
+    /// Adds newline characters for every line so the Unity UI does not add its own new lines when a space character is encountered.
+    /// </summary>
+    /// <param name="str">The string you want to fix for Unity UI.</param>
+    /// <returns>The fixed Unity UI string.</returns>
+    public string FixStringForUI(string str)
+    {
+        for (int i = PAGE_WIDTH; i < PAGE_LENGTH; i += PAGE_WIDTH + 1)
+            str = str.Insert(i, "\n");
+        return str;
     }
     #endregion
 
@@ -95,21 +120,32 @@ public class Algorithm : MonoBehaviour
     /// Creates an encrypted string of a predefined length based on any string passed in.
     /// </summary>
     /// <param name="str">A string that is to be encrypted.</param>
-    /// <param name="starting_i">An integer representing where in the encryption you want to start at.</param>
-    public void Encrypt(string str)
+    /// <param name="startingPage">An integer representing the page you would like to encrypt.</param>
+    public string Encrypt(string str)
     {
+        if (currentPage > AMOUNT_OF_PAGES)
+        {
+            Debug.LogError("<color=red>Encrypting Issue:</color> Books only have " + AMOUNT_OF_PAGES + " pages. You are trying to encrypt a page greater than that.");
+            return "";
+        }
+        else if (currentPage < 1)
+        {
+            Debug.LogError("<color=red>Encrypting Issue:</color> Books begin at page 1. You are trying to encrypt a page below page 1.");
+            return "";
+        }
         str = Pad(str);
         string encrypted = "";
-        for (int i = 0; i < BOOK_LENGTH; i++)
+        int startIndex = (currentPage - 1) * PAGE_LENGTH;
+        for (int i = startIndex; i < (startIndex + PAGE_LENGTH); i++)
         {
-            int charValue = characters.IndexOf(str[i % str.Length]);
-            int encryptedChar = (charValue + (PseudoRandom(i) % MOD)) % MOD;
+            int charValue = characters.IndexOf(str[i]);
+            Random.seed = i;
+            int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
             encrypted += characters[encryptedChar];
         }
-        encrypted = Strip(encrypted);
-        print(encrypted);
-
-        GUIUtility.systemCopyBuffer = encrypted;
+        string decrypted = Decrypt(encrypted);
+        encrypted = FixStringForUI(encrypted);
+        return decrypted;
     }
     #endregion
 
@@ -118,18 +154,31 @@ public class Algorithm : MonoBehaviour
     /// Decrypts a string
     /// </summary>
     /// <param name="str">A string that you would like to decrypt.</param>
-    public void Decrypt(string str)
+    /// <param name="startingPage">An integer representing the page you would like to decrypt.</param>
+    public string Decrypt(string str)
     {
-        str = Pad(str);
-        string decrypted = "";
-        for (int i = 0; i < BOOK_LENGTH; i++)
+        if (currentPage > AMOUNT_OF_PAGES)
         {
-            int charValue = characters.IndexOf(str[i % str.Length]);
-            int decryptedChar = ((charValue - (PseudoRandom(i) % MOD)) + MOD) % MOD;
+            Debug.LogError("<color=red>Decrypting Issue:</color> Books only have " + AMOUNT_OF_PAGES + " pages. You are trying to decrypt a page greater than that.");
+            return "";
+        }
+        else if (currentPage < 1)
+        {
+            Debug.LogError("<color=red>Decrypting Issue:</color> Books begin at page 1. You are trying to decrypt a page below page 1.");
+            return "";
+        }
+        str = PadDecrypt(str);
+        string decrypted = "";
+        int startIndex = (currentPage - 1) * PAGE_LENGTH;
+        for (int i = startIndex; i < (startIndex + PAGE_LENGTH); i++)
+        {
+            int charValue = characters.IndexOf(str[i]);
+            Random.seed = i;
+            int decryptedChar = (int)nfmod((charValue - (int)(Random.value * MOD)), MOD);
             decrypted += characters[decryptedChar];
         }
-        decrypted = Strip(decrypted);
-        print(decrypted);
+        decrypted = FixStringForUI(decrypted);
+        return decrypted;
     }
     #endregion
 
@@ -169,6 +218,11 @@ public class Algorithm : MonoBehaviour
         return result;
     }
     #endregion
+
+    float nfmod(float a, float b)
+    {
+        return a - b * Mathf.Floor(a / b);
+    }
 
     #region Convert Base 10 to Base 95
     /// <summary>
@@ -211,4 +265,17 @@ public class Algorithm : MonoBehaviour
         return value;
     }
     #endregion
+
+    public void NextPage()
+    {
+        currentPage++;
+        bookText.text = Encrypt("The quick brown fox jumped over the lazy dog.");
+    }
+
+    public void PreviousPage()
+
+    {
+        currentPage--;
+        bookText.text = Encrypt("The quick brown fox jumped over the lazy dog.");
+    }
 }
