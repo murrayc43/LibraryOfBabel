@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using BigIntegerType;
+using System.Text;
 
 public class Algorithm : MonoBehaviour
 {
@@ -16,7 +17,6 @@ public class Algorithm : MonoBehaviour
     private const int AMOUNT_OF_PAGES = 10;
     private const int BOOK_LENGTH = PAGE_LENGTH * AMOUNT_OF_PAGES;
     private const int MOD = 95;
-    private const int SEED = 42;
     private float currentTime, previousTime = 0f;
     private int currentPage = 0;
     #endregion
@@ -51,7 +51,6 @@ public class Algorithm : MonoBehaviour
     /// Pads a string with leading spaces.
     /// </summary>
     /// <param name="str">A string you would like to pad with extra spaces.</param>
-    /// <param name="padBasedOnCurrentPage">Should the string be padded on both sides of the string based on the current page?</param>
     /// <returns>The string padded with leading spaces.</returns>
     public string Pad(string str)
     {
@@ -59,7 +58,13 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
-    public string PadDecrypt(string str)
+    #region PadDirect
+    /// <summary>
+    /// Pads a substring both with leading and following spaces based on where the substring resides in the entire book.
+    /// </summary>
+    /// <param name="str">A substring you would like to pad with extra spaces both leading and following it.</param>
+    /// <returns>The substring padded with leading and following spaces.</returns>
+    public string PadDirect(string str)
     {
         string paddedStr = "";
         paddedStr += new string(' ', (currentPage - 1) * PAGE_LENGTH);
@@ -67,6 +72,7 @@ public class Algorithm : MonoBehaviour
         paddedStr += new string(' ', BOOK_LENGTH - str.Length);
         return paddedStr;
     }
+    #endregion
 
     #region Strip
     /// <summary>
@@ -103,25 +109,14 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
-    #region PseudoRandom
-    /// <summary>
-    /// Creates a pseudorandom number based off of a passed in index of a character in a string and predefined seed.
-    /// </summary>
-    /// <param name="index">An integer representing the index of a character in a string.</param>
-    /// <returns>A pseudorandom integer.</returns>
-    public int PseudoRandom(int index)
-    {
-        return (index * (int)(haltonSequence(index, SEED) * 100));
-    }
-    #endregion
-
     #region Encrypt
     /// <summary>
     /// Creates an encrypted string of a predefined length based on any string passed in.
     /// </summary>
     /// <param name="str">A string that is to be encrypted.</param>
-    /// <param name="startingPage">An integer representing the page you would like to encrypt.</param>
-    public string Encrypt(string str)
+    /// <param name="entireBook">Do you want to return the entire book instead of one page at a time?</param>
+    /// <returns>The encrypted version of either the entire book encrypted or one page at a time.</returns>
+    public string Encrypt(string str, bool entireBook)
     {
         if (currentPage > AMOUNT_OF_PAGES)
         {
@@ -133,19 +128,32 @@ public class Algorithm : MonoBehaviour
             Debug.LogError("<color=red>Encrypting Issue:</color> Books begin at page 1. You are trying to encrypt a page below page 1.");
             return "";
         }
+
         str = Pad(str);
         string encrypted = "";
-        int startIndex = (currentPage - 1) * PAGE_LENGTH;
-        for (int i = startIndex; i < (startIndex + PAGE_LENGTH); i++)
+        if (entireBook)
         {
-            int charValue = characters.IndexOf(str[i]);
-            Random.seed = i;
-            int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
-            encrypted += characters[encryptedChar];
+            for (int i = 0; i < BOOK_LENGTH; i++)
+            {
+                int charValue = characters.IndexOf(str[i]);
+                Random.InitState(i);
+                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
+                encrypted += characters[encryptedChar];
+            }
         }
-        string decrypted = Decrypt(encrypted);
+        else
+        {
+            int startIndex = (currentPage - 1) * PAGE_LENGTH;
+            for (int i = startIndex; i < (startIndex + PAGE_LENGTH); i++)
+            {
+                int charValue = characters.IndexOf(str[i]);
+                Random.InitState(i);
+                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
+                encrypted += characters[encryptedChar];
+            }
+        }
         encrypted = FixStringForUI(encrypted);
-        return decrypted;
+        return encrypted;
     }
     #endregion
 
@@ -154,8 +162,8 @@ public class Algorithm : MonoBehaviour
     /// Decrypts a string
     /// </summary>
     /// <param name="str">A string that you would like to decrypt.</param>
-    /// <param name="startingPage">An integer representing the page you would like to decrypt.</param>
-    public string Decrypt(string str)
+    /// <param name="entireBook">Are you wanting to decrypt the whole book or a substring in a specific spot of the book?</param>
+    public string Decrypt(string str, bool entireBook)
     {
         if (currentPage > AMOUNT_OF_PAGES)
         {
@@ -167,14 +175,15 @@ public class Algorithm : MonoBehaviour
             Debug.LogError("<color=red>Decrypting Issue:</color> Books begin at page 1. You are trying to decrypt a page below page 1.");
             return "";
         }
-        str = PadDecrypt(str);
+
+        str = (entireBook) ? Pad(str) : PadDirect(str);
         string decrypted = "";
         int startIndex = (currentPage - 1) * PAGE_LENGTH;
         for (int i = startIndex; i < (startIndex + PAGE_LENGTH); i++)
         {
             int charValue = characters.IndexOf(str[i]);
-            Random.seed = i;
-            int decryptedChar = (int)nfmod((charValue - (int)(Random.value * MOD)), MOD);
+            Random.InitState(i);
+            int decryptedChar = (int)trueModulus((charValue - (int)(Random.value * MOD)), MOD);
             decrypted += characters[decryptedChar];
         }
         decrypted = FixStringForUI(decrypted);
@@ -197,32 +206,18 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
-    #region Halton Sequence
+    #region True Modulus
     /// <summary>
-    /// Recreation of the Halton Sequence that generates a random number between 0 and 1.
+    /// A recreation of the true modulus operation. Use this function instead of '%' if you are trying to modulus negative numbers.
     /// </summary>
-    /// <param name="index">The prime number that is to be broken up.</param>
-    /// <param name="radix">How many times you want to break up the prime number sequence.</param>
-    /// <returns>A pseudo random number between 0 and 1 based off the passed in prime number and division count.</returns>
-    private float haltonSequence(int index, int radix)
-    {
-        float result = 0;
-        float f = 1;
-        float i = index;
-        while (i > 0)
-        {
-            f = f / radix;
-            result = result + f * (i % radix);
-            i = Mathf.Floor(i / radix);
-        }
-        return result;
-    }
-    #endregion
-
-    float nfmod(float a, float b)
+    /// <param name="a">The numerator of the modulus.</param>
+    /// <param name="b">The denominator of the modulus.</param>
+    /// <returns>The modulus of a % b.</returns>
+    float trueModulus(float a, float b)
     {
         return a - b * Mathf.Floor(a / b);
     }
+    #endregion
 
     #region Convert Base 10 to Base 95
     /// <summary>
@@ -266,16 +261,101 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
+    #region FasterEncrypt
+    /// <summary>
+    /// Creates an encrypted string of a predefined length based on any string passed in.
+    /// </summary>
+    /// <param name="str">A string that is to be encrypted.</param>
+    /// <param name="entireBook">Do you want to return the entire book instead of one page at a time?</param>
+    /// <returns>The encrypted version of either the entire book encrypted or one page at a time.</returns>
+    public string FasterEncrypt(string str, bool entireBook)
+    {
+        if (currentPage > AMOUNT_OF_PAGES)
+        {
+            Debug.LogError("<color=red>Encrypting Issue:</color> Books only have " + AMOUNT_OF_PAGES + " pages. You are trying to encrypt a page greater than that.");
+            return "";
+        }
+        else if (currentPage < 1)
+        {
+            Debug.LogError("<color=red>Encrypting Issue:</color> Books begin at page 1. You are trying to encrypt a page below page 1.");
+            return "";
+        }
+
+        str = Pad(str);
+        StringBuilder sb = new StringBuilder();
+        if (entireBook)
+        {
+            for (int i = 0; i < BOOK_LENGTH; i++)
+            {
+                int charValue = characters.IndexOf(str[i]);
+                Random.InitState(i);
+                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
+                sb.Append(characters[encryptedChar]);
+            }
+        }
+        else
+        {
+            int startIndex = (currentPage - 1) * PAGE_LENGTH;
+            for (int i = startIndex; i < (startIndex + PAGE_LENGTH); i++)
+            {
+                int charValue = characters.IndexOf(str[i]);
+                Random.InitState(i);
+                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
+                sb.Append(characters[encryptedChar]);
+            }
+        }
+        string encrypted = sb.ToString();
+        string decrypted = FasterDecrypt(encrypted, false);
+        encrypted = FixStringForUI(encrypted);
+        return decrypted;
+    }
+    #endregion
+
+    #region FasterDecrypt
+    /// <summary>
+    /// Decrypts a string
+    /// </summary>
+    /// <param name="str">A string that you would like to decrypt.</param>
+    /// <param name="entireBook">Are you wanting to decrypt the whole book or a substring in a specific spot of the book?</param>
+    public string FasterDecrypt(string str, bool entireBook)
+    {
+        if (currentPage > AMOUNT_OF_PAGES)
+        {
+            Debug.LogError("<color=red>Decrypting Issue:</color> Books only have " + AMOUNT_OF_PAGES + " pages. You are trying to decrypt a page greater than that.");
+            return "";
+        }
+        else if (currentPage < 1)
+        {
+            Debug.LogError("<color=red>Decrypting Issue:</color> Books begin at page 1. You are trying to decrypt a page below page 1.");
+            return "";
+        }
+
+        str = (entireBook) ? Pad(str) : PadDirect(str);
+        StringBuilder sb = new StringBuilder();
+        int startIndex = (currentPage - 1) * PAGE_LENGTH;
+        for (int i = startIndex; i < (startIndex + PAGE_LENGTH); i++)
+        {
+            int charValue = characters.IndexOf(str[i]);
+            Random.InitState(i);
+            int decryptedChar = (int)trueModulus((charValue - (int)(Random.value * MOD)), MOD);
+            sb.Append(characters[decryptedChar]);
+        }
+        string decrypted = sb.ToString();
+        decrypted = FixStringForUI(decrypted);
+        return decrypted;
+    }
+    #endregion
+
     public void NextPage()
     {
         currentPage++;
-        bookText.text = Encrypt("The quick brown fox jumped over the lazy dog.");
+        bookText.text = FasterEncrypt("Curtis Gregory Murray", false);
     }
 
     public void PreviousPage()
 
     {
         currentPage--;
-        bookText.text = Encrypt("The quick brown fox jumped over the lazy dog.");
+        bookText.text = FasterEncrypt("Curtis Gregory Murray", false);
     }
 }
