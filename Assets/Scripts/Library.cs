@@ -15,17 +15,17 @@ public class Library : MonoBehaviour
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
         for (int i = -10; i < 10; i++)
-            GameObject.Instantiate(library, new Vector3(0, i * 10, 0), Quaternion.identity).name = "Library " + i;
+            GameObject.Instantiate(library, new Vector3(0, i * 5, 0), Quaternion.identity).name = "Library " + i;
         invisibleFloor = GameObject.Find("Library -1");
         invisibleFloor.SetActive(false);
     }
 
     void Update()
     {
-        if ((player.position.y / 10) >= 1.158f)
+        if ((player.position.y / 5) >= 0.816f)
         {
-            player.position = new Vector3(player.position.x, player.position.y - 10, player.position.z);
-            mainFloor.position -= new Vector3(0, 10, 0);
+            player.position = new Vector3(player.position.x, player.position.y - 5, player.position.z);
+            mainFloor.position -= new Vector3(0, 5, 0);
 
             if (currentFloor <= 8)
             {
@@ -35,10 +35,10 @@ public class Library : MonoBehaviour
             }
             currentFloor++;
         }
-        else if ((player.position.y / 10) <= -0.842f)
+        else if ((player.position.y / 5) <= -0.185f)
         {
-            player.position = new Vector3(player.position.x, player.position.y + 10, player.position.z);
-            mainFloor.position += new Vector3(0, 10, 0);
+            player.position = new Vector3(player.position.x, player.position.y + 5, player.position.z);
+            mainFloor.position += new Vector3(0, 5, 0);
 
             if (currentFloor <= 10)
             {

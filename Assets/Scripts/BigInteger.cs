@@ -1040,6 +1040,40 @@ namespace BigIntegerType
 		}
         #endregion
 
+        /// <summary>
+        /// Returns the power of a BigInteger base to a non-negative exponent by using the
+        /// fast exponentiation algorithm (right to left binary exponentiation).
+        /// </summary>
+        /// <param name="number">The BigInteger base</param>
+        /// <param name="exponent">The non-negative exponent</param>
+        /// <returns>The power of the BigInteger base to the non-negative exponent</returns>
+        /// <exception cref="BigIntegerException">
+        /// Cannot raise a BigInteger to a negative power exception</exception>
+        public static BigInteger Power(BigInteger number, int exponent)
+        {
+            if (exponent < 0)
+                throw new Exception("Cannot raise an BigInteger to a negative power.", null);
+
+            BigInteger res = new BigInteger(1);
+            if (exponent == 0)
+                return res;
+
+            BigInteger factor = new BigInteger(number.ToString());
+
+            while (exponent > 0)
+            {
+                if (exponent % 2 == 1)
+                    res *= factor;
+
+                exponent /= 2;
+
+                if (exponent > 0)
+                    factor *= factor;
+            }
+
+            return res;
+        }
+
         #region Bitwise Operator Overloads
 
         public static BigInteger operator & (BigInteger leftSide, BigInteger rightSide)
@@ -1608,7 +1642,7 @@ namespace BigIntegerType
 
         public string FromString(int radix, string number)
         {
-            const string charSet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/? ";
+            const string charSet = " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?";
             BigInteger value = new BigInteger(0);
             BigInteger baseNum = new BigInteger(radix);
             for (int i = 0, j = number.Length - 1; j >= 0; i++, j--)
