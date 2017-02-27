@@ -67,7 +67,7 @@ public class Algorithm : MonoBehaviour
             return "";
         }
 
-        str = PadLeft(str);
+        str = PadRight(str);
         StringBuilder sb = new StringBuilder();
         
         //Do you want the entire book returned?
@@ -119,7 +119,7 @@ public class Algorithm : MonoBehaviour
             return "";
         }
 
-        str = (entireBook) ? PadLeft(str) : PadDirect(str);
+        str = (entireBook) ? PadRight(str) : PadDirect(str);
         StringBuilder sb = new StringBuilder();
 
         //Do you want the entire book returned?
@@ -192,13 +192,13 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
-    #region Strip
+    #region Strip Left
     /// <summary>
     /// Strips a string of any leading spaces.
     /// </summary>
     /// <param name="str">The string you want to strip of spaces.</param>
     /// <returns>The string without leading spaces.</returns>
-    public string Strip(string str)
+    public string StripLeft(string str)
     {
         string newStr = "";
         bool copy = false;
@@ -209,9 +209,22 @@ public class Algorithm : MonoBehaviour
             if (copy)
                 newStr += str[i];
         }
-        if (newStr == "")
-            return " ";
         return newStr;
+    }
+    #endregion
+
+    #region Strip Right
+    public string StripRight(string str)
+    {
+        bool copy = false;
+        for (int i = str.Length - 1; i < str.Length; i--)
+        {
+            if (!copy && str[i] != ' ' && str[i] != '\n')
+                copy = true;
+            if (copy)
+                return (str.Substring(0, i + 1));
+        }
+        return "";
     }
     #endregion
 
@@ -315,31 +328,33 @@ public class Algorithm : MonoBehaviour
 
         //Overlay the two titles, taking the left side from the zeroith and the right side from the text
         string completeTitle = "";
-        completeTitle += zeroithTitle.Substring(0, textTitle.Length - content.Length);
-        completeTitle += textTitle.Substring(textTitle.Length - content.Length);
+        completeTitle += textTitle.Substring(0, content.Length);
+        completeTitle += zeroithTitle.Substring(content.Length);
 
         //Calculate the index of the first occurrence of the content
         string firstOccurrenceIndex = Decrypt(completeTitle, true);
 
+        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE START
         //string finishedIndex = Decrypt(completeTitle, true);
         //string finishedTitle = Encrypt(finishedIndex, true);
         //string finishedContent = Encrypt(finishedTitle, true);
+        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE END
 
         //Strip the index of any leading spaces for calculation
-        firstOccurrenceIndex = Strip(firstOccurrenceIndex);
+        firstOccurrenceIndex = StripRight(firstOccurrenceIndex);
 
         //Calculate where in the library the book resides
         BigInteger locationID = 0;
         for (int i = 0; i < firstOccurrenceIndex.Length; i++)
-        {
-            int exponent = firstOccurrenceIndex.Length - i - 1;
-            locationID += BigInteger.Power(95, exponent) * CHARACTERS.IndexOf(firstOccurrenceIndex[i]);
-        }
+            locationID += BigInteger.Power(95, i) * CHARACTERS.IndexOf(firstOccurrenceIndex[i]);
+
+        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE START
+        BigInteger floor = locationID / BOOKS_PER_FLOOR;
+        BigInteger book = locationID % MOD;
+        print("Floor " + floor + ", Book " + book);
+        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE END
 
         return locationID;
-        //BigInteger floor = locationID / BOOKS_PER_FLOOR;
-        //BigInteger book = locationID % MOD;
-        //return ("Floor " + floor + ", Book " + book);
     }
     #endregion
 
@@ -358,30 +373,20 @@ public class Algorithm : MonoBehaviour
             BigInteger difference = index / largestValue;
             BigInteger waste = largestValue * difference;
 
-            sb.Append(CHARACTERS[int.Parse(difference.ToString())]);
+            //sb.Append(CHARACTERS[int.Parse(difference.ToString())]);
+            sb.Insert(0, CHARACTERS[int.Parse(difference.ToString())]);
 
             index -= waste;
             startingPoint--;
         }
-        return sb.ToString();
+        return PadRight(sb.ToString());
     }
 
     public void NextPage()
     {
         currentPage++;
-        //ContentToLocation("The quick brown fox jumped over the lazy dog.");
-        //GUIUtility.systemCopyBuffer = Encrypt(Encrypt(LocationToIndex(0), true), true);
-        //BigInteger contentToIndex = ContentToLocation("0a");
-        //print(contentToIndex);
-        //string valueToIndex = LocationToIndex(new BigInteger("100428"));
-        //string indexToTitle = Encrypt(valueToIndex, true);
-        //string titleToContent = Encrypt(indexToTitle, true);
-        //BigInteger contentToIndex = ContentToLocation(titleToContent);
-
-        //print(contentToIndex);
-
-        currentPage++;
-        bookText.text = Encrypt("Curtis Gregory Murray", true);
+        //bookText.text = Encrypt("Curtis Gregory Murray", true);
+        GUIUtility.systemCopyBuffer = Encrypt(Encrypt(LocationToIndex(ContentToLocation("Fuck")), true), true);
     }
 
     public void PreviousPage()
