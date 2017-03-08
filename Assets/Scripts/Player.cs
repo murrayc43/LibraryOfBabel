@@ -1,16 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
+using BigIntegerType;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
-    public float speed = 6f;
-    public float jumpSpeed = 8f;
-    public float gravity = 20f;
+    public Text currentLocation;
+    
+    private float speed = 6f;
+    private float jumpSpeed = 8f;
+    private float gravity = 20f;
     private bool isJumping = false;
     private CharacterController controller;
-    private Camera mainCamera;
+    private Library library;
+    private CameraController mainCamera;
     private Vector3 moveVector = Vector3.zero;
-
 
     #region Start
     /// <summary>
@@ -19,10 +23,10 @@ public class Player : MonoBehaviour
     public void Start()
     {
         controller = GetComponent<CharacterController>();
-        mainCamera = transform.FindChild("Camera").GetComponent<Camera>();
+        mainCamera = transform.FindChild("Camera").GetComponent<CameraController>();
+        library = GameObject.FindGameObjectWithTag("Player").GetComponent<Library>();
     }
     #endregion
-
 
     #region Update
     /// <summary>
@@ -35,6 +39,32 @@ public class Player : MonoBehaviour
     }
     #endregion
 
+    #region Fixed Update
+    /// <summary>
+    /// This is run once every physics frame.
+    /// </summary>
+    public void FixedUpdate()
+    {
+        currentLocation.text = "";
+
+        Vector3 forward = mainCamera.transform.TransformDirection(Vector3.forward);
+        RaycastHit hit;
+        if (Physics.Raycast(mainCamera.transform.position, forward, out hit, 5))
+        {
+            if (hit.transform.tag == "Book")
+            {
+                Indexer indexer = hit.transform.parent.parent.parent.GetComponent<Indexer>();
+                string[] bookNameParts = hit.transform.name.Split(' ');
+                int book = int.Parse(bookNameParts[1]);
+                int shelf = book / 100;
+            
+                currentLocation.text = ("Floor: " + library.currentFloor + ", Sector: " + indexer.sector + ", Bookcase: " + indexer.bookcase + ", Shelf: " + shelf + ", Book: " + book);
+                BigInteger bookIndex = (library.currentFloor * 76800) + (indexer.sector * 19200) + (indexer.bookcase * 400) + book;
+                print("Book Index: " + bookIndex);
+            }
+        }
+    }
+    #endregion
 
     #region Movement
     /// <summary>
@@ -71,7 +101,6 @@ public class Player : MonoBehaviour
         SlopeCorrection();
     }
     #endregion
-
 
     #region Slope Correction
     /// <summary>

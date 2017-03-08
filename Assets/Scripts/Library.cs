@@ -8,24 +8,28 @@ public class Library : MonoBehaviour
     public Transform mainFloor;
     private GameObject invisibleFloor;
     private Transform player;
-    [SerializeField]
-    private int currentFloor = 0;
+    private int heightDifference = 10;
+    public int currentFloor = 0;
 
-    void Start()
+    public void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
-        for (int i = -10; i < 10; i++)
-            GameObject.Instantiate(library, new Vector3(0, i * 5, 0), Quaternion.identity).name = "Library " + i;
+        for (int i = -10; i <= 10; i++)
+        {
+            if (i != 0)
+                GameObject.Instantiate(library, new Vector3(0, i * heightDifference, 0), Quaternion.identity).name = "Library " + i;
+        }
         invisibleFloor = GameObject.Find("Library -1");
         invisibleFloor.SetActive(false);
     }
 
-    void Update()
+    public void Update()
     {
-        if ((player.position.y / 5) >= 0.816f)
+        //if ((player.position.y / heightDifference) >= 0.816f)
+        if ((player.position.y / heightDifference) >= 0.9f)
         {
-            player.position = new Vector3(player.position.x, player.position.y - 5, player.position.z);
-            mainFloor.position -= new Vector3(0, 5, 0);
+            player.position = new Vector3(player.position.x, player.position.y - heightDifference, player.position.z);
+            mainFloor.position -= new Vector3(0, heightDifference, 0);
 
             if (currentFloor <= 8)
             {
@@ -35,10 +39,11 @@ public class Library : MonoBehaviour
             }
             currentFloor++;
         }
-        else if ((player.position.y / 5) <= -0.185f)
+        //else if ((player.position.y / heightDifference) <= -0.185f)
+        else if ((player.position.y / heightDifference) <= -0.101f)
         {
-            player.position = new Vector3(player.position.x, player.position.y + 5, player.position.z);
-            mainFloor.position += new Vector3(0, 5, 0);
+            player.position = new Vector3(player.position.x, player.position.y + heightDifference, player.position.z);
+            mainFloor.position += new Vector3(0, heightDifference, 0);
 
             if (currentFloor <= 10)
             {

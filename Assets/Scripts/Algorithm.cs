@@ -358,6 +358,12 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
+    #region Location to Index
+    /// <summary>
+    /// Calculates the index of a specific location in the library.
+    /// </summary>
+    /// <param name="index">The book location as a number.</param>
+    /// <returns>The index of the book number.</returns>
     public string LocationToIndex(BigInteger index)
     {
         //Find out the largest starting point to calculate down to string
@@ -372,8 +378,7 @@ public class Algorithm : MonoBehaviour
             BigInteger largestValue = BigInteger.Power(95, startingPoint);
             BigInteger difference = index / largestValue;
             BigInteger waste = largestValue * difference;
-
-            //sb.Append(CHARACTERS[int.Parse(difference.ToString())]);
+            
             sb.Insert(0, CHARACTERS[int.Parse(difference.ToString())]);
 
             index -= waste;
@@ -381,17 +386,20 @@ public class Algorithm : MonoBehaviour
         }
         return PadRight(sb.ToString());
     }
+    #endregion
 
     public void NextPage()
     {
         currentPage++;
         //bookText.text = Encrypt("Curtis Gregory Murray", true);
-        GUIUtility.systemCopyBuffer = Encrypt(Encrypt(LocationToIndex(ContentToLocation("Fuck")), true), true);
+        //GUIUtility.systemCopyBuffer = Encrypt(Encrypt(LocationToIndex(ContentToLocation(derp)), true), true);
+        bookText.text = Encrypt("Fuck", false);
+        GUIUtility.systemCopyBuffer = Encrypt("Fuck", true);
     }
 
     public void PreviousPage()
     {
         currentPage--;
-        bookText.text = Encrypt("Curtis Gregory Murray", true);
+        bookText.text = Encrypt("Fuck", false);
     }
 }

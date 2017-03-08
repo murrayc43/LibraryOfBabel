@@ -1,15 +1,12 @@
-﻿using UnityEngine;
+﻿using BigIntegerType;
+using UnityEngine;
 using System.Collections;
 
 public class Book : MonoBehaviour
 {
-    public void OnWillRenderObject()
+    public void Start()
     {
-        ///print("OnWillRenderObject()");
-    }
-
-    public void OnBecameInvisible()
-    {
-        ///print("OnBecameInvisible()");
+        GetComponent<BoxCollider>().enabled = true;
+        tag = "Book";
     }
 }
