@@ -1,6 +1,4 @@
-﻿using BigIntegerType;
-using UnityEngine;
-using System.Collections;
+﻿using UnityEngine;
 
 public class Book : MonoBehaviour
 {

@@ -1,8 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-using System.Collections.Generic;
-using System.Security.Cryptography;
 using BigIntegerType;
 using System.Text;
 
@@ -10,16 +7,25 @@ public class Algorithm : MonoBehaviour
 {
     #region Variables
     private Text bookText;
+    private GameObject bookScreen, currentLocation;
+    private Player player;
     private const string CHARACTERS = " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?"; //95 unique characters
     private const int PAGE_WIDTH = 137;
     private const int PAGE_HEIGHT = 28;
     private const int PAGE_LENGTH = PAGE_WIDTH * PAGE_HEIGHT;
     private const int AMOUNT_OF_PAGES = 1000;
     private const int BOOK_LENGTH = PAGE_LENGTH * AMOUNT_OF_PAGES;
-    private const int BOOKS_PER_FLOOR = 1000;
+    private const int BOOKS_PER_FLOOR = 76800;
+    private const int BOOKS_PER_SECTOR = 19200;
+    private const int BOOKS_PER_BOOKSHELF = 400;
     private const int MOD = 95;
     private float currentTime, previousTime = 0f;
-    private int currentPage = 0;
+    private int currentPage = 1;
+
+    public BigInteger bookLocation;
+    public string bookTitle;
+    public BigInteger floor;
+    public int sector, bookcase, shelf, book;
     #endregion
 
     #region Start
@@ -29,6 +35,10 @@ public class Algorithm : MonoBehaviour
     public void Start()
     {
         bookText = GameObject.FindGameObjectWithTag("BookText").GetComponent<Text>();
+        bookScreen = GameObject.FindGameObjectWithTag("BookScreen");
+        bookScreen.SetActive(false);
+        currentLocation = GameObject.FindGameObjectWithTag("CurrentLocation");
+        player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
     }
     #endregion
 
@@ -41,8 +51,17 @@ public class Algorithm : MonoBehaviour
         //TESTING PURPOSES ONLY.
         if (Input.GetKeyDown(KeyCode.C))
         {
-            GUIUtility.systemCopyBuffer = bookText.text;
-            Debug.Log("<color=green>Page text copied to clipboard!</color>");
+            //GUIUtility.systemCopyBuffer = ContentToLocation("Fuck");
+            BigInteger tempLocation = ContentToLocation("Fuck");
+            print(tempLocation);
+            string temp = "<color=green>Floor:</color> " + (tempLocation / BOOKS_PER_FLOOR);
+            tempLocation -= (tempLocation / BOOKS_PER_FLOOR) * BOOKS_PER_FLOOR;
+            temp += ", <color=green>Sector:</color> " + (int)(int.Parse(tempLocation.ToString()) / BOOKS_PER_SECTOR);
+            tempLocation -= (int)(int.Parse(tempLocation.ToString()) / BOOKS_PER_SECTOR) * BOOKS_PER_SECTOR;
+            temp += ", <color=green>Bookcase:</color> " + (int.Parse(tempLocation.ToString()) / BOOKS_PER_BOOKSHELF);
+            tempLocation -= (int.Parse(tempLocation.ToString()) / BOOKS_PER_BOOKSHELF) * BOOKS_PER_BOOKSHELF;
+            temp += ", <color=green>Book:</color> " + tempLocation;
+            Debug.Log("<color=green>Go to</color>" + temp);
         }
     }
     #endregion
@@ -77,7 +96,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
+                int encryptedChar = (charValue + (int)(Random.value * MOD + (bookcase + shelf + book))) % MOD;
                 sb.Append(CHARACTERS[encryptedChar]);
             }
         }
@@ -89,7 +108,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
+                int encryptedChar = (charValue + (int)(Random.value * MOD + (bookcase + shelf + book))) % MOD;
                 sb.Append(CHARACTERS[encryptedChar]);
             }
         }
@@ -129,7 +148,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD)), MOD);
+                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD + (bookcase + shelf + book))), MOD);
                 sb.Append(CHARACTERS[decryptedChar]);
             }
         }
@@ -141,7 +160,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD)), MOD);
+                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD + (bookcase + shelf + book))), MOD);
                 sb.Append(CHARACTERS[decryptedChar]);
             }
         }
@@ -388,18 +407,34 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
-    public void NextPage()
+    public void generateBook()
     {
-        currentPage++;
-        //bookText.text = Encrypt("Curtis Gregory Murray", true);
-        //GUIUtility.systemCopyBuffer = Encrypt(Encrypt(LocationToIndex(ContentToLocation(derp)), true), true);
-        bookText.text = Encrypt("Fuck", false);
-        GUIUtility.systemCopyBuffer = Encrypt("Fuck", true);
+        bookLocation = (floor * 76800) + (sector * 19200) + (bookcase * 400) + book;
+        print("Book location: " + bookLocation);
+        bookTitle = Encrypt(LocationToIndex(bookLocation), true);
+        bookScreen.SetActive(true);
+        currentLocation.SetActive(false);
+        bookText.text = Encrypt(bookTitle, false);
     }
 
-    public void PreviousPage()
+    public void nextPage()
+    {
+        currentPage++;
+        bookText.text = Encrypt(bookTitle, false);
+    }
+
+    public void previousPage()
     {
         currentPage--;
-        bookText.text = Encrypt("Fuck", false);
+        bookText.text = Encrypt(bookTitle, false);
+    }
+
+    public void exitBook()
+    {
+        currentPage = 1;
+        bookText.text = "";
+        bookScreen.SetActive(false);
+        currentLocation.SetActive(true);
+        player.mainCamera.cursorLock = CursorLockMode.Locked;
     }
 }

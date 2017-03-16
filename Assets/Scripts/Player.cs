@@ -1,20 +1,23 @@
 ﻿using UnityEngine;
-using System.Collections;
 using BigIntegerType;
 using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
-    public Text currentLocation;
-    
+    #region Variables
     private float speed = 6f;
     private float jumpSpeed = 8f;
     private float gravity = 20f;
     private bool isJumping = false;
     private CharacterController controller;
     private Library library;
-    private CameraController mainCamera;
     private Vector3 moveVector = Vector3.zero;
+    private Algorithm algorithm;
+
+    public Text currentLocation;
+    public CameraController mainCamera;
+    public GameObject TeleportInput;
+    #endregion
 
     #region Start
     /// <summary>
@@ -25,6 +28,7 @@ public class Player : MonoBehaviour
         controller = GetComponent<CharacterController>();
         mainCamera = transform.FindChild("Camera").GetComponent<CameraController>();
         library = GameObject.FindGameObjectWithTag("Player").GetComponent<Library>();
+        algorithm = GameObject.FindGameObjectWithTag("Algorithm").GetComponent<Algorithm>();
     }
     #endregion
 
@@ -36,6 +40,12 @@ public class Player : MonoBehaviour
     {
         if (mainCamera.cursorLock == CursorLockMode.Locked)
             Movement();
+
+        //DEBUGGING ONLY
+        if (Input.GetKeyDown(KeyCode.T))
+            TeleportInput.SetActive(true);
+        if (Input.GetKeyDown(KeyCode.P))
+            print("Current floor: " + library.currentFloor);
     }
     #endregion
 
@@ -45,22 +55,36 @@ public class Player : MonoBehaviour
     /// </summary>
     public void FixedUpdate()
     {
-        currentLocation.text = "";
-
-        Vector3 forward = mainCamera.transform.TransformDirection(Vector3.forward);
-        RaycastHit hit;
-        if (Physics.Raycast(mainCamera.transform.position, forward, out hit, 5))
+        if (mainCamera.cursorLock == CursorLockMode.Locked)
         {
-            if (hit.transform.tag == "Book")
+            currentLocation.text = "";
+
+            Vector3 forward = mainCamera.transform.TransformDirection(Vector3.forward);
+            RaycastHit hit;
+            if (Physics.Raycast(mainCamera.transform.position, forward, out hit, 5))
             {
-                Indexer indexer = hit.transform.parent.parent.parent.GetComponent<Indexer>();
-                string[] bookNameParts = hit.transform.name.Split(' ');
-                int book = int.Parse(bookNameParts[1]);
-                int shelf = book / 100;
-            
-                currentLocation.text = ("Floor: " + library.currentFloor + ", Sector: " + indexer.sector + ", Bookcase: " + indexer.bookcase + ", Shelf: " + shelf + ", Book: " + book);
-                BigInteger bookIndex = (library.currentFloor * 76800) + (indexer.sector * 19200) + (indexer.bookcase * 400) + book;
-                print("Book Index: " + bookIndex);
+                if (hit.transform.tag == "Book")
+                {
+                    Indexer indexer = hit.transform.parent.parent.parent.GetComponent<Indexer>();
+                    string[] bookNameParts = hit.transform.name.Split(' ');
+                    int book = int.Parse(bookNameParts[1]);
+                    int shelf = book / 100;
+
+                    currentLocation.text = ("Floor: " + library.currentFloor + ", Sector: " + indexer.sector + ", Bookcase: " + indexer.bookcase + ", Shelf: " + shelf + ", Book: " + book);
+
+                    if (Input.GetMouseButton(0))
+                    {
+                        mainCamera.cursorLock = CursorLockMode.None;
+
+                        algorithm.floor = library.currentFloor;
+                        algorithm.sector = indexer.sector;
+                        algorithm.bookcase = indexer.bookcase;
+                        algorithm.shelf = shelf;
+                        algorithm.book = book;
+
+                        algorithm.generateBook();
+                    }
+                }
             }
         }
     }
