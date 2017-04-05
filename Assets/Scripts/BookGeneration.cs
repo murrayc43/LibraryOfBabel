@@ -2,15 +2,16 @@
 
 public class BookGeneration : MonoBehaviour
 {
-    public GameObject bookGameObject;
-
+    private GlobalVariables globalVariables;
     private int amountOfBooksPerShelf = 100;
     private float distanceBetweenBooks = 0.0285f;
     private float increment = 0.0f;
-    private bool generateBooks = false;
+    private bool generateBooks = true;
 
     public void Start()
     {
+        globalVariables = GameObject.FindGameObjectWithTag("Player").GetComponent<GlobalVariables>();
+
         //Generate the books if requested
         if (generateBooks)
         {
@@ -18,7 +19,7 @@ public class BookGeneration : MonoBehaviour
 
             for (int i = 0; i < amountOfBooksPerShelf; i++)
             {
-                GameObject tempBook = Instantiate(bookGameObject, transform.position, Quaternion.identity, gameObject.transform);
+                GameObject tempBook = Instantiate(globalVariables.book, transform.position, Quaternion.identity, gameObject.transform);
                 tempBook.transform.localPosition = tempBook.transform.right * increment;
                 tempBook.transform.rotation = transform.rotation;
                 increment -= distanceBetweenBooks;

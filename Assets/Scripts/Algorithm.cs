@@ -19,7 +19,6 @@ public class Algorithm : MonoBehaviour
     private const int BOOKS_PER_SECTOR = 19200;
     private const int BOOKS_PER_BOOKSHELF = 400;
     private const int MOD = 95;
-    private float currentTime, previousTime = 0f;
     private int currentPage = 1;
 
     public BigInteger bookLocation;
@@ -51,17 +50,7 @@ public class Algorithm : MonoBehaviour
         //TESTING PURPOSES ONLY.
         if (Input.GetKeyDown(KeyCode.C))
         {
-            //GUIUtility.systemCopyBuffer = ContentToLocation("Fuck");
-            BigInteger tempLocation = ContentToLocation("Fuck");
-            print(tempLocation);
-            string temp = "<color=green>Floor:</color> " + (tempLocation / BOOKS_PER_FLOOR);
-            tempLocation -= (tempLocation / BOOKS_PER_FLOOR) * BOOKS_PER_FLOOR;
-            temp += ", <color=green>Sector:</color> " + (int)(int.Parse(tempLocation.ToString()) / BOOKS_PER_SECTOR);
-            tempLocation -= (int)(int.Parse(tempLocation.ToString()) / BOOKS_PER_SECTOR) * BOOKS_PER_SECTOR;
-            temp += ", <color=green>Bookcase:</color> " + (int.Parse(tempLocation.ToString()) / BOOKS_PER_BOOKSHELF);
-            tempLocation -= (int.Parse(tempLocation.ToString()) / BOOKS_PER_BOOKSHELF) * BOOKS_PER_BOOKSHELF;
-            temp += ", <color=green>Book:</color> " + tempLocation;
-            Debug.Log("<color=green>Go to</color>" + temp);
+            //GUIUtility.systemCopyBuffer = ttc;
         }
     }
     #endregion
@@ -96,7 +85,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int encryptedChar = (charValue + (int)(Random.value * MOD + (bookcase + shelf + book))) % MOD;
+                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
                 sb.Append(CHARACTERS[encryptedChar]);
             }
         }
@@ -108,7 +97,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int encryptedChar = (charValue + (int)(Random.value * MOD + (bookcase + shelf + book))) % MOD;
+                int encryptedChar = (charValue + (int)(Random.value * MOD)) % MOD;
                 sb.Append(CHARACTERS[encryptedChar]);
             }
         }
@@ -148,7 +137,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD + (bookcase + shelf + book))), MOD);
+                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD)), MOD);
                 sb.Append(CHARACTERS[decryptedChar]);
             }
         }
@@ -160,7 +149,7 @@ public class Algorithm : MonoBehaviour
             {
                 int charValue = CHARACTERS.IndexOf(str[i]);
                 Random.InitState(i);
-                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD + (bookcase + shelf + book))), MOD);
+                int decryptedChar = (int)Mod((charValue - (int)(Random.value * MOD)), MOD);
                 sb.Append(CHARACTERS[decryptedChar]);
             }
         }
@@ -337,7 +326,7 @@ public class Algorithm : MonoBehaviour
     /// </summary>
     /// <param name="content">The content of the book that you are looking for.</param>
     /// <returns>The location of the first occurrance book containing the content.</returns>
-    public BigInteger ContentToLocation(string content)
+    public string ContentToLocation(string content)
     {
         //Find the title of the 0th index
         string zeroithTitle = Encrypt(" ", true);
@@ -353,12 +342,6 @@ public class Algorithm : MonoBehaviour
         //Calculate the index of the first occurrence of the content
         string firstOccurrenceIndex = Decrypt(completeTitle, true);
 
-        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE START
-        //string finishedIndex = Decrypt(completeTitle, true);
-        //string finishedTitle = Encrypt(finishedIndex, true);
-        //string finishedContent = Encrypt(finishedTitle, true);
-        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE END
-
         //Strip the index of any leading spaces for calculation
         firstOccurrenceIndex = StripRight(firstOccurrenceIndex);
 
@@ -366,14 +349,17 @@ public class Algorithm : MonoBehaviour
         BigInteger locationID = 0;
         for (int i = 0; i < firstOccurrenceIndex.Length; i++)
             locationID += BigInteger.Power(95, i) * CHARACTERS.IndexOf(firstOccurrenceIndex[i]);
-
-        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE START
+        
+        //Break down the locationID to find out exactly where the book is located
         BigInteger floor = locationID / BOOKS_PER_FLOOR;
-        BigInteger book = locationID % MOD;
-        print("Floor " + floor + ", Book " + book);
-        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DEBUG CODE END
+        locationID -= floor * BOOKS_PER_FLOOR;
+        BigInteger sector = locationID / BOOKS_PER_SECTOR;
+        locationID -= sector * BOOKS_PER_SECTOR;
+        BigInteger bookshelf = locationID / BOOKS_PER_BOOKSHELF;
+        locationID -= bookshelf * BOOKS_PER_BOOKSHELF;
+        BigInteger book = locationID;
 
-        return locationID;
+        return ("Go to: Floor " + floor + ", Section " + sector + ", Bookcase " + bookshelf + ", Book " + book);
     }
     #endregion
 
@@ -407,28 +393,46 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
-    public void generateBook()
+    #region Generate Book
+    /// <summary>
+    /// Generate's the content of the book the player is currently looking at.
+    /// </summary>
+    public void GenerateBook()
     {
         bookLocation = (floor * 76800) + (sector * 19200) + (bookcase * 400) + book;
-        print("Book location: " + bookLocation);
         bookTitle = Encrypt(LocationToIndex(bookLocation), true);
         bookScreen.SetActive(true);
         currentLocation.SetActive(false);
         bookText.text = Encrypt(bookTitle, false);
     }
+    #endregion
 
+    #region Next Page Button
+    /// <summary>
+    /// Controls the 'next page' button when viewing a book's content.
+    /// </summary>
     public void nextPage()
     {
         currentPage++;
         bookText.text = Encrypt(bookTitle, false);
     }
+    #endregion
 
+    #region Previous Page Button
+    /// <summary>
+    /// Controls the 'previous page' button when viewing a book's content.
+    /// </summary>
     public void previousPage()
     {
         currentPage--;
         bookText.text = Encrypt(bookTitle, false);
     }
+    #endregion
 
+    #region Exit Book Button
+    /// <summary>
+    /// Controls the 'exit book' button when viewing a book's content.
+    /// </summary>
     public void exitBook()
     {
         currentPage = 1;
@@ -437,4 +441,5 @@ public class Algorithm : MonoBehaviour
         currentLocation.SetActive(true);
         player.mainCamera.cursorLock = CursorLockMode.Locked;
     }
+    #endregion
 }

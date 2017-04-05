@@ -16,7 +16,8 @@ public class Player : MonoBehaviour
 
     public Text currentLocation;
     public CameraController mainCamera;
-    public GameObject TeleportInput;
+    public GameObject teleportInput;
+    public GameObject lookupInput;
     #endregion
 
     #region Start
@@ -42,9 +43,17 @@ public class Player : MonoBehaviour
             Movement();
 
         //DEBUGGING ONLY
-        if (Input.GetKeyDown(KeyCode.T))
-            TeleportInput.SetActive(true);
-        if (Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.T) && lookupInput.activeInHierarchy == false)
+        {
+            teleportInput.SetActive(true);
+            mainCamera.cursorLock = CursorLockMode.None;
+        }
+        if (Input.GetKeyDown(KeyCode.L) && teleportInput.activeInHierarchy == false)
+        {
+            lookupInput.SetActive(true);
+            mainCamera.cursorLock = CursorLockMode.None;
+        }
+        if (Input.GetKeyDown(KeyCode.P) && lookupInput.activeInHierarchy == false && teleportInput.activeInHierarchy == false)
             print("Current floor: " + library.currentFloor);
     }
     #endregion
@@ -82,7 +91,7 @@ public class Player : MonoBehaviour
                         algorithm.shelf = shelf;
                         algorithm.book = book;
 
-                        algorithm.generateBook();
+                        algorithm.GenerateBook();
                     }
                 }
             }
