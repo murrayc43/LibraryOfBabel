@@ -6,7 +6,7 @@ public class BookGeneration : MonoBehaviour
     private int amountOfBooksPerShelf = 100;
     private float distanceBetweenBooks = 0.0285f;
     private float increment = 0.0f;
-    private bool generateBooks = true;
+    private bool generateBooks = false;
 
     public void Start()
     {

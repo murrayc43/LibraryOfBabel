@@ -6,7 +6,7 @@ using System.Text;
 public class Algorithm : MonoBehaviour
 {
     #region Variables
-    private Text bookText;
+    private InputField bookText;
     private GameObject bookScreen, currentLocation;
     private Player player;
     private const string CHARACTERS = " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?"; //95 unique characters
@@ -15,8 +15,8 @@ public class Algorithm : MonoBehaviour
     private const int PAGE_LENGTH = PAGE_WIDTH * PAGE_HEIGHT;
     private const int AMOUNT_OF_PAGES = 1000;
     private const int BOOK_LENGTH = PAGE_LENGTH * AMOUNT_OF_PAGES;
-    private const int BOOKS_PER_FLOOR = 76800;
-    private const int BOOKS_PER_SECTOR = 19200;
+	private const int BOOKS_PER_FLOOR = 70400;//76800; //70400
+	private const int BOOKS_PER_SECTOR = 17600;//19200; //17600
     private const int BOOKS_PER_BOOKSHELF = 400;
     private const int MOD = 95;
     private int currentPage = 1;
@@ -33,7 +33,7 @@ public class Algorithm : MonoBehaviour
     /// </summary>
     public void Start()
     {
-        bookText = GameObject.FindGameObjectWithTag("BookText").GetComponent<Text>();
+		bookText = GameObject.FindGameObjectWithTag("BookText").GetComponent<InputField>();
         bookScreen = GameObject.FindGameObjectWithTag("BookScreen");
         bookScreen.SetActive(false);
         currentLocation = GameObject.FindGameObjectWithTag("CurrentLocation");
@@ -286,20 +286,6 @@ public class Algorithm : MonoBehaviour
     /// <returns>A string of the passed in number in Base 95.</returns>
     private string Base10To95(BigInteger num)
     {
-        /*string number = "";
-        int i = 0;
-        while (num / (int)Mathf.Pow(95, i) > 94)
-            i++;
-        while (i >= 0)
-        {
-            if (CHARACTERS[(num / (int)Mathf.Pow(95, i))] == '\\')
-                number += '\\';
-            else
-                number += CHARACTERS[(num / (int)Mathf.Pow(95, i))];
-            num -= (num / (int)Mathf.Pow(95, i)) * (int)Mathf.Pow(95, i);
-            i--;
-        }
-        return number;*/
         return num.ToString(95);
     }
     #endregion
@@ -359,6 +345,7 @@ public class Algorithm : MonoBehaviour
         locationID -= bookshelf * BOOKS_PER_BOOKSHELF;
         BigInteger book = locationID;
 
+		GUIUtility.systemCopyBuffer = floor.ToString();
         return ("Go to: Floor " + floor + ", Section " + sector + ", Bookcase " + bookshelf + ", Book " + book);
     }
     #endregion
@@ -393,17 +380,31 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
+	#region Find Word In Page
+	/// <summary>
+	/// Determines if a specified word is contained within the page being displayed.
+	/// </summary>
+	/// <param name="word">The specific word that you are looking for in the the page.</param>
+	/// <returns>True or false whether the specific word was found to be contained within the page being displayed.</returns>
+	public bool FindWordInPage(string word)
+	{
+		return (bookText.text.Contains(word)) ? true : false;
+	}
+	#endregion
+
     #region Generate Book
     /// <summary>
     /// Generate's the content of the book the player is currently looking at.
     /// </summary>
     public void GenerateBook()
     {
-        bookLocation = (floor * 76800) + (sector * 19200) + (bookcase * 400) + book;
+        bookLocation = (floor * BOOKS_PER_FLOOR) + (sector * BOOKS_PER_SECTOR) + (bookcase * BOOKS_PER_BOOKSHELF) + book;
         bookTitle = Encrypt(LocationToIndex(bookLocation), true);
         bookScreen.SetActive(true);
         currentLocation.SetActive(false);
         bookText.text = Encrypt(bookTitle, false);
+		print(FindWordInPage ("fuck"));
+		GUIUtility.systemCopyBuffer = bookText.text;
     }
     #endregion
 

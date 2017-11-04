@@ -27,7 +27,7 @@ public class Player : MonoBehaviour
     public void Start()
     {
         controller = GetComponent<CharacterController>();
-        mainCamera = transform.FindChild("Camera").GetComponent<CameraController>();
+        mainCamera = transform.Find("Camera").GetComponent<CameraController>();
         library = GameObject.FindGameObjectWithTag("Player").GetComponent<Library>();
         algorithm = GameObject.FindGameObjectWithTag("Algorithm").GetComponent<Algorithm>();
     }
@@ -73,11 +73,13 @@ public class Player : MonoBehaviour
             if (Physics.Raycast(mainCamera.transform.position, forward, out hit, 5))
             {
                 if (hit.transform.tag == "Book")
-                {
-                    Indexer indexer = hit.transform.parent.parent.parent.GetComponent<Indexer>();
-                    string[] bookNameParts = hit.transform.name.Split(' ');
-                    int book = int.Parse(bookNameParts[1]);
-                    int shelf = book / 100;
+				{
+					;
+                    Indexer indexer = hit.transform.parent.parent.GetComponent<Indexer>();
+                    //string[] bookNameParts = hit.transform.name.Split(' ');
+					//int book = int.Parse(bookNameParts[1]);
+					int shelf = int.Parse(hit.transform.parent.name.Split(' ')[1]);
+					int book = (int)((((hit.transform.InverseTransformPoint(hit.point).x) + 5) * 10) + (shelf * 100));
 
                     currentLocation.text = ("Floor: " + library.currentFloor + ", Sector: " + indexer.sector + ", Bookcase: " + indexer.bookcase + ", Shelf: " + shelf + ", Book: " + book);
 
