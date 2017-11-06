@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 public class Library : MonoBehaviour
 {
+	#region Variables
     private GameObject invisibleFloor;
     private Transform player;
     private Algorithm algorithmScript;
@@ -16,7 +17,9 @@ public class Library : MonoBehaviour
     public GameObject libraryStairsOnly;
     public Transform mainFloor;
     public BigInteger currentFloor = 0;
+	#endregion
 
+	#region Start
     public void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
@@ -29,7 +32,9 @@ public class Library : MonoBehaviour
             if (i != 0)
                 GameObject.Instantiate((i > -3 && i < 3 ? libraryLimited : libraryStairsOnly), new Vector3(0, i * heightDifference, 0), Quaternion.identity).name = "Library " + i;
     }
+	#endregion
 
+	#region Update
     public void Update()
     {
         if ((player.position.y / heightDifference) >= 0.9f)
@@ -63,7 +68,9 @@ public class Library : MonoBehaviour
             }
         }
     }
+	#endregion
 
+	#region Teleport
     public void Teleport()
     {
         Vector3 mainFloorOriginalPosition = new Vector3(102.5f, 0.1f, 0);
@@ -86,7 +93,9 @@ public class Library : MonoBehaviour
         teleportText.transform.parent.gameObject.SetActive(false);
         player.GetComponent<Player>().mainCamera.cursorLock = CursorLockMode.Locked;
     }
+	#endregion
 
+	#region Lookup
     public void Lookup()
     {
         lookupLocation.text = algorithmScript.ContentToLocation(lookupInput.text);
@@ -94,4 +103,5 @@ public class Library : MonoBehaviour
         lookupInput.transform.parent.gameObject.SetActive(false);
         player.GetComponent<Player>().mainCamera.cursorLock = CursorLockMode.Locked;
     }
+	#endregion
 }

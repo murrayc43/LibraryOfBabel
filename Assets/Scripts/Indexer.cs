@@ -2,9 +2,12 @@
 
 public class Indexer : MonoBehaviour
 {
+	#region Variables
     public int sector = 0;
     public int bookcase = 0;
+	#endregion
 
+	#region Start
     public void Start()
     {
         //Get bookcase
@@ -14,5 +17,6 @@ public class Indexer : MonoBehaviour
         //Get sector
         nameSplit = transform.parent.name.Split(' ');
         sector = int.Parse(nameSplit[1]);
-    } 
+    }
+	#endregion
 }

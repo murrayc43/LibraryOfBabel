@@ -9,15 +9,17 @@ public class Algorithm : MonoBehaviour
     private InputField bookText;
     private GameObject bookScreen, currentLocation;
     private Player player;
+	private Words listOfWords;
     private const string CHARACTERS = " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?"; //95 unique characters
     private const int PAGE_WIDTH = 137;
     private const int PAGE_HEIGHT = 28;
     private const int PAGE_LENGTH = PAGE_WIDTH * PAGE_HEIGHT;
     private const int AMOUNT_OF_PAGES = 1000;
-    private const int BOOK_LENGTH = PAGE_LENGTH * AMOUNT_OF_PAGES;
-	private const int BOOKS_PER_FLOOR = 70400;//76800; //70400
-	private const int BOOKS_PER_SECTOR = 17600;//19200; //17600
-    private const int BOOKS_PER_BOOKSHELF = 400;
+	private const int BOOK_LENGTH = PAGE_LENGTH * AMOUNT_OF_PAGES;
+	private const int BOOKSHELVES_PER_SECTION = 44;
+	private const int BOOKS_PER_BOOKSHELF = 400;
+	private const int BOOKS_PER_SECTOR = BOOKSHELVES_PER_SECTION * BOOKS_PER_BOOKSHELF; //17600
+	private const int BOOKS_PER_FLOOR = BOOKS_PER_SECTOR * 4; //70400
     private const int MOD = 95;
     private int currentPage = 1;
 
@@ -38,6 +40,7 @@ public class Algorithm : MonoBehaviour
         bookScreen.SetActive(false);
         currentLocation = GameObject.FindGameObjectWithTag("CurrentLocation");
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
+		listOfWords = GetComponent<Words> ();
     }
     #endregion
 
@@ -380,18 +383,6 @@ public class Algorithm : MonoBehaviour
     }
     #endregion
 
-	#region Find Word In Page
-	/// <summary>
-	/// Determines if a specified word is contained within the page being displayed.
-	/// </summary>
-	/// <param name="word">The specific word that you are looking for in the the page.</param>
-	/// <returns>True or false whether the specific word was found to be contained within the page being displayed.</returns>
-	public bool FindWordInPage(string word)
-	{
-		return (bookText.text.Contains(word)) ? true : false;
-	}
-	#endregion
-
     #region Generate Book
     /// <summary>
     /// Generate's the content of the book the player is currently looking at.
@@ -403,7 +394,7 @@ public class Algorithm : MonoBehaviour
         bookScreen.SetActive(true);
         currentLocation.SetActive(false);
         bookText.text = Encrypt(bookTitle, false);
-		print(FindWordInPage ("fuck"));
+		print(listOfWords.FindWordsInPage(listOfWords.GetWords(), bookText.text));
 		GUIUtility.systemCopyBuffer = bookText.text;
     }
     #endregion
